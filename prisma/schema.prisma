@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Package {
+  id          String   @id @default(uuid())
+  name        String
+  days        Int
+  price       Int
+  active      Boolean  @default(true)
+  label       String   @default("NONE")
+  sortOrder   Int      @default(0)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  orders      Order[]
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  orderCode     String      @unique
+  packageId     String
+  package       Package     @relation(fields: [packageId], references: [id])
+  customerEmail String
+  customerName  String?
+  amount        Int
+  paidAmount    Int?
+  status        String      @default("PENDING")
+  paidAt        DateTime?
+  activatedAt   DateTime?
+  expiresAt     DateTime?
+  webhookPayload String?
+  adminNote     String?
+  licenseKey    String?
+  paymentTransactionId String?
+  paymentReceivedAt    DateTime?
+  reviewReason         String?
+  refundedAt           DateTime?
+  refundDaysDeducted   Int?
+  revokeAckAt          DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Customer {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  name        String?
+  active      Boolean  @default(false)
+  activatedAt DateTime?
+  expiresAt   DateTime?
+  locked      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Config {
+  key   String @id
+  value String
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
+
+model TransactionLog {
+  id        String   @id @default(uuid())
+  type      String
+  source    String
+  payload   String?
+  status    String
+  message   String?
+  createdAt DateTime @default(now())
+}
+
+model EmailLog {
+  id        String   @id @default(uuid())
+  to        String
+  type      String
+  subject   String
+  status    String
+  sentAt    DateTime?
+  error     String?
+  createdAt DateTime @default(now())
+}
+
+model PaymentTransaction {
+  id             String   @id @default(uuid())
+  gatewayName    String
+  transactionId  String
+  orderId        String?
+  orderCode      String?
+  amount         Int
+  rawContentHash String
+  receivedAt     DateTime @default(now())
+  result         String   @default("received")
+
+  @@unique([gatewayName, transactionId])
+  @@index([orderId])
+}
+
+model AlertState {
+  type            String   @id
+  lastSentAt      DateTime
+  pendingCount    Int      @default(0)
+  pendingSummary  String?
+}
